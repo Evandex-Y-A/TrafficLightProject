@@ -4,8 +4,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
-import java.io.File;
-import java.net.URL;
 
 /**
  *
@@ -20,9 +18,8 @@ public class TrafficPanel extends JPanel {
     private int offsetX, offsetY;
     private java.util.List<Point> relativePositions = new ArrayList<>();
     
-    public TrafficPanel(int width, int height, Color color) {
-        setBackground(color);
-        setSize(width, height);
+    public TrafficPanel() {
+        setBackground(Color.WHITE);
         initNodes();
         
         addComponentListener(new ComponentAdapter() {
@@ -64,7 +61,49 @@ public class TrafficPanel extends JPanel {
         addMouseMotionListener(dragHandler);
     }
     
-    // Add this method to initialize nodes when the panel is resized
+    public void updateLightState(String stateData) {
+        String[] parts = stateData.split(",");
+        if (parts.length < 4) return;
+        
+        char label = parts[0].charAt(0);
+        boolean red = "1".equals(parts[1]);
+        boolean yellow = "1".equals(parts[2]);
+        boolean green = "1".equals(parts[3]);
+        
+        for (TrafficLight light : lights) {
+            if (light.getLabel() == label) {
+                light.setState(red, yellow, green);
+                break;
+            }
+        }
+        repaint();
+    }
+    
+    public void updateOrder(String sequence) {
+        String[] labels = sequence.split(",");
+        Map<Character, TrafficLight> map = new HashMap<>();
+        for (TrafficLight light : lights) {
+            map.put(light.getLabel(), light);
+        }
+        
+        java.util.List<TrafficLight> reorderedNodes = new ArrayList<>();
+        for (String label : labels) {
+            label = label.trim();
+            if (!label.isEmpty() && map.containsKey(label.charAt(0))) {
+                reorderedNodes.add(map.get(label.charAt(0)));
+            }
+        }
+        
+        // Links A -> B -> C -> D -> E -> A
+        for (int i = 0; i < reorderedNodes.size(); i++) {
+            TrafficLight current = reorderedNodes.get(i);
+            TrafficLight next = reorderedNodes.get((i + 1) % reorderedNodes.size());
+            current.setNext(next);
+        }
+        
+        repaint();
+    }
+    
     @Override
     public void setBounds(int x, int y, int width, int height) {
         super.setBounds(x, y, width, height);
@@ -74,7 +113,6 @@ public class TrafficPanel extends JPanel {
         }
     }
 
-    // Add this method to handle component resize
     @Override
     public void setSize(int width, int height) {
         super.setSize(width, height);
@@ -84,11 +122,12 @@ public class TrafficPanel extends JPanel {
         }
     }
     
-    private void initNodes() {
+    public void initNodes() {
+        if (getWidth() <= 0 || getHeight() <= 0) return;
         lights.clear();
         int cx = getWidth() / 2;
         int cy = getHeight() / 2;
-        int r = (int)(Math.min(cx, cy) * 0.2);
+        int r = (int)(Math.min(cx, cy) * 0.8);
         char[] labels = {'A', 'B', 'C', 'D', 'E'};
         for (int i = 0; i < labels.length; i++) {
             double angle = Math.toRadians(-90 + 360 * i / labels.length);
@@ -111,28 +150,6 @@ public class TrafficPanel extends JPanel {
     
     public void setShowLabels(boolean show) {
         this.showLabels = show;
-        repaint();
-    }
-    
-    public void updateOrder(String sequence) {
-        String[] labels = sequence.split(",");
-        for (int i = 0; i < labels.length; i++) {
-            labels[i] = labels[i].trim();
-        }
-        
-        Map<Character, TrafficLight> map = new HashMap();
-        for (TrafficLight l : lights) map.put(l.getLabel(), l);
-        
-        java.util.List<TrafficLight> reorderedNodes = new ArrayList<>();
-        for (String s : labels) {
-            s = s.trim();
-            if (s.length() == 1 && map.containsKey(s.charAt(0))) reorderedNodes.add(map.get(s.charAt(0)));
-        }
-        
-        for (int i = 0; i < reorderedNodes.size() - 1; i++) {
-            reorderedNodes.get(i).setNext(reorderedNodes.get(i+1));
-        }
-        setNextOnLists(lights);
         repaint();
     }
     
@@ -163,16 +180,42 @@ public class TrafficPanel extends JPanel {
     }
     
     private void drawArrow(Graphics2D g2, int x1, int y1, int x2, int y2) {
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+        double length = Math.sqrt(dx*dx + dy*dy);
+    
+        if (length == 0) return;
+    
+        double ux = dx / length;
+        double uy = dy / length;
+        
+        int radiusX = 18;
+        int radiusY = 30;
+    
+        int startX = (int)(x1 + ux * radiusX);
+        int startY = (int)(y1 + uy * radiusY);
+        int endX = (int)(x2 - ux * radiusX);
+        int endY = (int)(y2 - uy * radiusY);
+    
         g2.setStroke(new BasicStroke(2));
-        g2.drawLine(x1, y1, x2, y2);
-        double angle = Math.atan2(y2 - y1, x2 - x1);
-        int length = 10;
-        int ax = x2 - (int)(length * Math.cos(angle - Math.PI/6));
-        int ay = y2 - (int)(length * Math.sin(angle - Math.PI/6));
-        int bx = x2 - (int)(length * Math.cos(angle + Math.PI/6));
-        int by = y2 - (int)(length * Math.sin(angle + Math.PI/6));
-        g2.drawLine(x2, y2, ax, ay);
-        g2.drawLine(x2, y2, bx, by);
+        g2.drawLine(startX, startY, endX, endY);
+    
+        double adjDx = endX - startX;
+        double adjDy = endY - startY;
+        double adjLength = Math.sqrt(adjDx*adjDx + adjDy*adjDy);
+    
+        if (adjLength == 0) return; 
+    
+        double angle = Math.atan2(adjDy, adjDx);
+    
+        int arrowSize = 10;
+        int ax = endX - (int)(arrowSize * Math.cos(angle - Math.PI/6));
+        int ay = endY - (int)(arrowSize * Math.sin(angle - Math.PI/6));
+        int bx = endX - (int)(arrowSize * Math.cos(angle + Math.PI/6));
+        int by = endY - (int)(arrowSize * Math.sin(angle + Math.PI/6));
+    
+        g2.drawLine(endX, endY, ax, ay);
+        g2.drawLine(endX, endY, bx, by);
     }
     
     public void repositionNodes() {
