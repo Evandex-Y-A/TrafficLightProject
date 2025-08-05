@@ -13,7 +13,7 @@ unsigned long Delays[5][3] = {
   {1000, 1000, 1000},
   {1000, 1000, 1000}
 };
-
+char Labels[5] = {'A','B','C','D','E'};
 int TLOrder[5] = {0, 1, 2, 3, 4};
 
 enum Colors {
@@ -21,12 +21,6 @@ enum Colors {
   YELLOW,
   GREEN,
   REDYELLOW
-};
-
-enum SetCommands {
-  SETDELAY,
-  SETORDER,
-  SETALL
 };
 
 struct TrafficState {
@@ -53,7 +47,7 @@ void setup() {
 }
 
 void loop() {
-  Cereal();
+  readSerial();
   Traffic();
 }
 
@@ -112,32 +106,36 @@ void Traffic() {
 }
 
 void sendStates() {
-  Serial.print("STATE:");
   for (int i = 0; i < 5; i++) {
-    Serial.print("");
+
+    Serial.print("STATE:");
+    Serial.print(Labels[TLOrder[i]]);
+    Serial.print(",");
+    Serial.print(digitalRead(Lights[i][RED]) ? "1" : "0");
+    Serial.print(",");
+    Serial.print(digitalRead(Lights[i][YELLOW]) ? "1" : "0");
+    Serial.print(",");
+    Serial.print(digitalRead(Lights[i][GREEN]) ? "1" : "0");
+    Serial.println();
   }
 }
-void Cereal() {
+
+void readSerial() {
   if (Serial.available() <= 0) return;
   String input = Serial.readStringUntil('\n');
   input.trim();
 
   if (input.equals("PAUSE")) {
     trafficState.isPaused = true;
-    Serial.println("Paused. The streets are in anarchy.");
+    Serial.println("Paused");
   }
   else if (input.equals("RESUME")) {
     trafficState.isPaused = false;
-    Serial.println("Resumed. Order restored.");
+    Serial.println("Resumed");
   }
   else if (input.startsWith("SET")) {
     input.remove(0, 3);
-    int setInput; // used in switch statement in handleSet
-    if (input.startsWith("DELAY")) setInput = SETDELAY;
-    else if (input.startsWith("ORDER")) setInput = SETORDER;
-    else if (input.startsWith("ALL")) setInput = SETALL;
-    else return;
-    handleSet(input, setInput);
+    handleSet(input); // does nothing currently
   }
   else {
     Serial.println("UNKNOWN COMMAND");
@@ -145,32 +143,6 @@ void Cereal() {
 }
 
 
-void handleSet(String truncatedInput, int command) {
-  return; // I'll finish this later
-  /*
-  switch (command) {
-    case SETDELAY:
-      truncatedInput.remove(0, 6);
-      int count = 0;
-      int value[5][3];
-
-      break;
-    case SETORDER:
-      truncatedInput.remove(0, 6);
-      int order[5];
-      int count = 0;
-      int start = 0;
-      int end = truncatedInput.indexOf(',');
-      while (end != -1 && count < 5) {
-        order[count++] = truncatedInput.substring(start, end).toInt();
-        start = end + 1;
-        end = truncatedInput.indexOf(',', start);
-      }
-      break;
-    case SETALL:
-      truncatedInput.remove(0, 4);
-      break;
-      
-  }
-  */
+void handleSet(String truncatedInput) {
+  return; // Add this later
 }
