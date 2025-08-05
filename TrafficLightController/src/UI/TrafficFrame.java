@@ -16,50 +16,111 @@ public class TrafficFrame extends JFrame {
     private JList<String> orderList;
     private DefaultListModel<String> listModel;
     private final java.util.List<DelayPanel> delayPanels = new ArrayList<>();
+    private JPanel cardPanel;
+    private JButton showDelaysBtn, showOrderBtn;
     /**
      * Creates new form TrafficFrame
      */
     public TrafficFrame() {
-        arduinoComms = new ArduinoComms(this);
         initComponents();
-        System.out.println("TrafficContainerPanel size: " + trafficContainerPanel.getWidth() + " " + trafficContainerPanel.getHeight());
-        System.out.println("Frame size: " + getSize());
+        serialPanel.setPreferredSize(new Dimension(320, 700));
         canvas = new TrafficPanel();
+        trafficContainerPanel.setLayout(new BorderLayout());
         trafficContainerPanel.add(canvas);
+        arduinoComms = new ArduinoComms(this);
+        initCardLayout();
+        SwingUtilities.invokeLater(() -> {
+        validate();
+        if (canvas.getWidth() > 0 && canvas.getHeight() > 0) {
+            canvas.initNodes();
+            }
+        });
         System.out.println("canvas size: " + canvas.getSize());
         trafficContainerPanel.setVisible(true);
-        setPreferredSize(new Dimension(800, 600));
-        setSize(new Dimension(800, 600));
-        setLocationRelativeTo(null);
-        SwingUtilities.invokeLater(() -> {
-            trafficContainerPanel.validate();
-        if (canvas.getWidth() > 0 && canvas.getHeight() > 0)
-            canvas.initNodes();
-        canvas.repositionNodes();
-        canvas.repaint();
-        });
-        initDelayPanels();
+        setPreferredSize(new Dimension(1000, 750));
+        setSize(new Dimension(1000, 750));
+        setLocationRelativeTo(null);;
         initSerialControls();
-        initOrderList();
     }
 
-    private void initDelayPanels() {
-        JPanel delayContainer = new JPanel();
-        delayContainer.setLayout(new GridLayout(5, 1, 5, 5)); 
+    private void initCardLayout() {
+        // Create card panel with CardLayout
+        cardPanel = new JPanel(new CardLayout());
         
+        // Create delay panel and add to card
+        JPanel delayPanel = initDelayPanels();
+        cardPanel.add(delayPanel, "DELAY");
+        
+        // Create order panel and add to card
+        JPanel orderPanel = initOrderList();
+        cardPanel.add(orderPanel, "ORDER");
+        
+        // Add card panel to serialPanel
+        serialPanel.setLayout(new BorderLayout());
+        serialPanel.add(cardPanel, BorderLayout.CENTER);
+        
+        // Add navigation buttons at the bottom
+        JPanel navPanel = new JPanel(new FlowLayout());
+        showDelaysBtn = new JButton("Show Delays");
+        showOrderBtn = new JButton("Show Order");
+        
+        showDelaysBtn.addActionListener(e -> {
+            CardLayout cl = (CardLayout)(cardPanel.getLayout());
+            cl.show(cardPanel, "DELAY");
+        });
+        
+        showOrderBtn.addActionListener(e -> {
+            CardLayout cl = (CardLayout)(cardPanel.getLayout());
+            cl.show(cardPanel, "ORDER");
+        });
+        
+        navPanel.add(showDelaysBtn);
+        navPanel.add(showOrderBtn);
+        serialPanel.add(navPanel, BorderLayout.SOUTH);
+    }
+    
+    private JPanel initDelayPanels() {
+        JPanel delayMainContainer = new JPanel();
+        delayMainContainer.setLayout(new BoxLayout(delayMainContainer, BoxLayout.Y_AXIS));
+        delayMainContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JPanel delayContainer = new JPanel();
+        delayContainer.setLayout(new GridLayout(5, 1, 5, 5));
+        delayContainer.setPreferredSize(new Dimension(280, 550));
+
         for (char label = 'A'; label <= 'E'; label++) {
             DelayPanel panel = new DelayPanel(String.valueOf(label));
             delayPanels.add(panel);
             delayContainer.add(panel);
         }
-        
-        serialPanel.setLayout(new BorderLayout(5, 5));
-        serialPanel.add(delayContainer, BorderLayout.NORTH);
-        System.out.println("delayContainer size: " + delayContainer.getSize());
+
+        JButton submitDelaysBtn = new JButton("Set All Delays");
+        submitDelaysBtn.addActionListener(e -> {
+            for (DelayPanel panel : delayPanels) {
+                char label = panel.getLabel().charAt(panel.getLabel().length() - 1);
+                arduinoComms.sendDelayCommand(
+                    label,
+                    panel.getRedDelay(),
+                    panel.getYellowDelay(),
+                    panel.getGreenDelay()
+                );
+            }
+        });
+        submitDelaysBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel trfLabel = new JLabel("Traffic Light Delays");
+        trfLabel.setHorizontalAlignment(SwingConstants.LEADING);
+        delayMainContainer.add(trfLabel);
+        delayMainContainer.add(Box.createRigidArea(new Dimension(0, 10)));
+        delayMainContainer.add(delayContainer);
+        delayMainContainer.add(Box.createRigidArea(new Dimension(0, 10)));
+        delayMainContainer.add(submitDelaysBtn);
+        return delayMainContainer;
     }
     
     private void initSerialControls() {
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        controlPanel.setName("Control Panel");
         JComboBox<String> portCombo = new JComboBox<>(arduinoComms.getAvailablePorts());
         JButton refreshButton = new JButton("↻");
         refreshButton.setToolTipText("Refresh ports");
@@ -89,18 +150,21 @@ public class TrafficFrame extends JFrame {
         filePanel.add(controlPanel);
     }
     
-    private void initOrderList() {
-        JPanel orderContainer = new JPanel();
-        orderContainer.setLayout(new BorderLayout(5, 5));
+    private JPanel initOrderList() {
+        JPanel orderMainContainer = new JPanel();
+        orderMainContainer.setLayout(new BoxLayout(orderMainContainer, BoxLayout.Y_AXIS));
+        orderMainContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        serialPanel.setLayout(new BorderLayout());
+        JPanel listPanel = new JPanel(new BorderLayout());
+        listPanel.setPreferredSize(new Dimension(280, 200));
+    
         listModel = new DefaultListModel<>();
         listModel.addElement("A");
         listModel.addElement("B");
         listModel.addElement("C");
         listModel.addElement("D");
         listModel.addElement("E");
-        
+    
         orderList = new JList<>(listModel);
         orderList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         orderList.setDragEnabled(true);
@@ -157,6 +221,7 @@ public class TrafficFrame extends JFrame {
                 }
                 return false;
             }
+            
         });
         
         orderList.setFixedCellHeight(30);
@@ -181,18 +246,33 @@ public class TrafficFrame extends JFrame {
             }
         });
         
-        JPanel listPanel = new JPanel(new BorderLayout());
-        listPanel.add(new JScrollPane(orderList), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(orderList);
+        scrollPane.setPreferredSize(new Dimension(280, 150));
+        listPanel.add(scrollPane, BorderLayout.CENTER);
+
         JLabel title = new JLabel("Drag to Reorder Traffic Lights");
         title.setHorizontalAlignment(SwingConstants.CENTER);
         title.setFont(title.getFont().deriveFont(Font.BOLD));
-        title.setBorder(BorderFactory.createEmptyBorder(5, 0, 10, 0));
         listPanel.add(title, BorderLayout.NORTH);
-        orderContainer.add(listPanel, BorderLayout.CENTER);
-        // orderContainer.add(setOrderBtn, BorderLayout.SOUTH);
 
-        serialPanel.add(orderContainer, BorderLayout.CENTER);
-        System.out.println(orderContainer.getSize());
+        JButton setOrderBtn = new JButton("Set Order");
+        setOrderBtn.addActionListener(e -> updateLightOrder());
+        setOrderBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        orderMainContainer.add(listPanel);
+        orderMainContainer.add(Box.createRigidArea(new Dimension(0, 10)));
+        orderMainContainer.add(setOrderBtn);
+
+        Component[] allComponents = serialPanel.getComponents();
+        for (Component comp : allComponents) {
+            System.out.println("Component name: " + comp.getName());
+            System.out.println("Component size: " + comp.getSize());
+        }
+        System.out.println("Size of orderList: " + orderList.getSize());
+        System.out.println("Size of serialPanel: " + serialPanel.getSize());
+        System.out.println("Size of listPanel: " + listPanel.getSize());
+        System.out.println("Size of orderContainer: " + orderMainContainer.getSize());
+        return orderMainContainer;
     }
     
     private void refreshPorts(JComboBox<String> portCombo) {

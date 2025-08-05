@@ -81,6 +81,9 @@
                   <Dimension value="[80, 22]"/>
                 </Property>
               </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JSpinner(numberModel1)"/>
+              </AuxValues>
             </Component>
             <Component class="javax.swing.JSpinner" name="yellowSpinner">
               <Properties>
@@ -88,6 +91,9 @@
                   <Dimension value="[80, 22]"/>
                 </Property>
               </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JSpinner(numberModel2)"/>
+              </AuxValues>
             </Component>
             <Component class="javax.swing.JSpinner" name="greenSpinner">
               <Properties>
@@ -98,6 +104,9 @@
                   <Dimension value="[80, 22]"/>
                 </Property>
               </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JSpinner(numberModel3)"/>
+              </AuxValues>
             </Component>
           </SubComponents>
         </Container>

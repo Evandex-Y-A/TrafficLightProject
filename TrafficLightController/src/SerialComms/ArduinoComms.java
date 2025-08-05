@@ -54,6 +54,14 @@ public class ArduinoComms {
         }
     }
     
+    public void sendDelayCommand(char light, int red, int yellow, int green) {
+        if (checkConnection()) {
+            String command = String.format("DELAY:%c:%d,%d,%d\n", light, red, yellow, green);
+            byte[] data = command.getBytes();
+            serialPort.writeBytes(data, data.length);
+        }
+    }
+    
     private void updateStates(String state) {
         int light = Character.getNumericValue(state.charAt(0));
         switch (light) {

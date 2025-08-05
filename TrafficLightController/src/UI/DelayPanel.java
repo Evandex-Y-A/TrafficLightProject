@@ -4,12 +4,17 @@
  */
 package UI;
 
-import java.awt.Dimension;
+import java.awt.*;
+import javax.swing.*;
 /**
  *
  * @author evandex
  */
 public class DelayPanel extends javax.swing.JPanel {
+    // Do I really have to do it like this?
+    SpinnerNumberModel numberModel1 = new javax.swing.SpinnerNumberModel(1000, 500, 100000, 500);
+    SpinnerNumberModel numberModel2 = new javax.swing.SpinnerNumberModel(1000, 500, 100000, 500);
+    SpinnerNumberModel numberModel3 = new javax.swing.SpinnerNumberModel(1000, 500, 100000, 500);
 
     /**
      * Creates new form DelayPanel
@@ -23,19 +28,19 @@ public class DelayPanel extends javax.swing.JPanel {
         redSpinner.setFocusable(true);
         yellowSpinner.setFocusable(true);
         greenSpinner.setFocusable(true);
-        setPreferredSize(new Dimension(300, 90));
+        setPreferredSize(new Dimension(300, 100));
     }
     
     public int getRedDelay() {
-        return (Integer) redSpinner.getValue();
+        return (int) redSpinner.getValue();
     }
     
     public int getYellowDelay() {
-        return (Integer) yellowSpinner.getValue();
+        return (int) yellowSpinner.getValue();
     }
     
     public int getGreenDelay() {
-        return (Integer) greenSpinner.getValue();
+        return (int) greenSpinner.getValue();
     }
     
     public String getLabel() {
@@ -57,9 +62,9 @@ public class DelayPanel extends javax.swing.JPanel {
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         spinnerPanel = new javax.swing.JPanel();
-        redSpinner = new javax.swing.JSpinner();
-        yellowSpinner = new javax.swing.JSpinner();
-        greenSpinner = new javax.swing.JSpinner();
+        redSpinner = new javax.swing.JSpinner(numberModel1);
+        yellowSpinner = new javax.swing.JSpinner(numberModel2);
+        greenSpinner = new javax.swing.JSpinner(numberModel3);
         topPanel = new javax.swing.JPanel();
         trafficLabel = new javax.swing.JLabel();
 

@@ -189,8 +189,8 @@ public class TrafficPanel extends JPanel {
         double ux = dx / length;
         double uy = dy / length;
         
-        int radiusX = 18;
-        int radiusY = 30;
+        int radiusX = 34;
+        int radiusY = 70;
     
         int startX = (int)(x1 + ux * radiusX);
         int startY = (int)(y1 + uy * radiusY);
