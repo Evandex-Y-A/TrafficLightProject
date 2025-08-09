@@ -126,8 +126,15 @@ public class TrafficPanel extends JPanel {
             double angle = Math.toRadians(-90 + 360 * i / labels.length);
             int x = cx + (int)(r * Math.cos(angle));
             int y = cy + (int)(r * Math.sin(angle));
-            TrafficLight l = new TrafficLight(labels[i], "Red_Light.png", x, y);
-            lights.add(l);
+            if (labels[i] == 'A') {
+                TrafficLight l = new TrafficLight(labels[i], "Green_Light.png", x, y);
+                lights.add(l);
+            }
+            else {
+                TrafficLight l = new TrafficLight(labels[i], "Red_Light.png", x, y);
+                lights.add(l);
+            }
+            
             
             int relativeX = (x - cx) * 100 / getWidth();
             int relativeY = (y - cy) * 100 / getHeight();

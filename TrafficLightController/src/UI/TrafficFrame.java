@@ -44,22 +44,17 @@ public class TrafficFrame extends JFrame {
     }
 
     private void initCardLayout() {
-        // Create card panel with CardLayout
         cardPanel = new JPanel(new CardLayout());
-        
-        // Create delay panel and add to card
+
         JPanel delayPanel = initDelayPanels();
         cardPanel.add(delayPanel, "DELAY");
-        
-        // Create order panel and add to card
+
         JPanel orderPanel = initOrderList();
         cardPanel.add(orderPanel, "ORDER");
-        
-        // Add card panel to serialPanel
+
         serialPanel.setLayout(new BorderLayout());
         serialPanel.add(cardPanel, BorderLayout.CENTER);
-        
-        // Add navigation buttons at the bottom
+
         JPanel navPanel = new JPanel(new FlowLayout());
         showDelaysBtn = new JButton("Show Delays");
         showOrderBtn = new JButton("Show Order");
