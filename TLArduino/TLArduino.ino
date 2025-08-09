@@ -16,6 +16,9 @@ unsigned long Delays[5][3] = {
 char Labels[5] = {'A','B','C','D','E'};
 int TLOrder[5] = {0, 1, 2, 3, 4};
 
+void handleDelay(String command);
+void handleOrder(String sequence);
+
 enum Colors {
   RED,
   YELLOW,
@@ -82,7 +85,6 @@ void Traffic() {
     
     case GREEN:
       if (elapsed >= Delays[currentIndex][GREEN]) {
-        digitalWrite(Lights[currentIndex][GREEN], LOW);
         digitalWrite(Lights[currentIndex][YELLOW], HIGH);
         sendStates();
         trafficState.state = YELLOW;
@@ -94,6 +96,7 @@ void Traffic() {
     case YELLOW:
       if (elapsed >= Delays[currentIndex][YELLOW]) {
         digitalWrite(Lights[currentIndex][RED], HIGH);
+        digitalWrite(Lights[currentIndex][GREEN], LOW);
         digitalWrite(Lights[currentIndex][YELLOW], LOW);
 
         digitalWrite(Lights[nextIndex][RED], LOW);
@@ -127,7 +130,7 @@ void readSerial() {
   if (Serial.available() <= 0) return;
   String input = Serial.readStringUntil('\n');
   input.trim();
-
+  Serial.println(input);
   if (input.equals("PAUSE")) {
     trafficState.isPaused = true;
     Serial.println("Paused");
@@ -136,12 +139,11 @@ void readSerial() {
     trafficState.isPaused = false;
     Serial.println("Resumed");
   }
-  else if (input.startsWith("SET")) {
-    input.remove(0, 3);
-    handleSet(input); // does nothing currently
-  }
   else if (input.startsWith("DELAY:")) {
     handleDelay(input.substring(6));
+  }
+  else if (input.startsWith("ORDER:")) {
+    handleOrder(input.substring(6));
   }
   else {
     Serial.println("UNKNOWN COMMAND");
@@ -150,31 +152,79 @@ void readSerial() {
 
 // New handler function
 void handleDelay(String command) {
-    char light = command.charAt(0);
-    command = command.substring(2); // Skip colon after light ID
-    
-    int redEnd = command.indexOf(',');
-    int yellowEnd = command.indexOf(',', redEnd+1);
-    
-    long redDelay = command.substring(0, redEnd).toInt();
-    long yellowDelay = command.substring(redEnd+1, yellowEnd).toInt();
-    long greenDelay = command.substring(yellowEnd+1).toInt();
-    
-    int lightIndex = -1;
-    for (int i=0; i<5; i++) {
-        if (Labels[i] == light) {
-            lightIndex = i;
-            break;
-        }
+  Serial.println("String received: " + command);
+  int firstColon = command.indexOf(':');
+  if (firstColon == -1) return;
+  
+  char light = command.charAt(0);
+  String data = command.substring(firstColon+1);
+  
+  int firstComma = data.indexOf(',');
+  int secondComma = data.indexOf(',', firstComma+1);
+  
+  if (firstComma == -1 || secondComma == -1) return;
+  
+  long redDelay = data.substring(0, firstComma).toInt();
+  long yellowDelay = data.substring(firstComma+1, secondComma).toInt();
+  long greenDelay = data.substring(secondComma+1).toInt();
+  
+  int lightIndex = -1;
+  for (int i=0; i<5; i++) {
+    if (Labels[i] == light) {
+      lightIndex = i;
+      break;
     }
-    
-    if (lightIndex != -1) {
-        Delays[lightIndex][RED] = redDelay;
-        Delays[lightIndex][YELLOW] = yellowDelay;
-        Delays[lightIndex][GREEN] = greenDelay;
-    }
+  }
+  
+  if (lightIndex != -1) {
+    Delays[lightIndex][0] = redDelay;    // RED
+    Delays[lightIndex][1] = yellowDelay; // YELLOW
+    Delays[lightIndex][2] = greenDelay;  // GREEN
+  }
 }
 
-void handleSet(String truncatedInput) {
-  return; // Add this later
+void handleOrder(String sequence) {
+  Serial.println("String received: " + sequence);
+  int order[5];
+  int count = 0;
+  int start = 0;
+  
+  for (int i=0; i<sequence.length() && count<5; i++) {
+    if (sequence[i] == ',') {
+      char label = sequence.charAt(start);
+      int idx = -1;
+      for (int j=0; j<5; j++) {
+        if (Labels[j] == label) {
+          idx = j;
+          break;
+        }
+      }
+      if (idx != -1) {
+        order[count] = idx;
+        count++;
+      }
+      start = i+1;
+    }
+  }
+  
+  if (count < 5 && start < sequence.length()) {
+    char label = sequence.charAt(start);
+    int idx = -1;
+    for (int j=0; j<5; j++) {
+      if (Labels[j] == label) {
+        idx = j;
+        break;
+      }
+    }
+    if (idx != -1) {
+      order[count] = idx;
+      count++;
+    }
+  }
+  
+  if (count == 5) {
+    for (int i=0; i<5; i++) {
+      TLOrder[i] = order[i];
+    }
+  }
 }

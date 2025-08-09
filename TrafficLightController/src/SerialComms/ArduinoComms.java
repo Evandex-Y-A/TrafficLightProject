@@ -41,6 +41,7 @@ public class ArduinoComms {
         Scanner scanner = new Scanner(serialPort.getInputStream());
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine().trim();
+            System.out.println("State received: " + line);
             if (line.startsWith("STATE:")) updateStates(line.substring(6));
             else if (line.startsWith("ORDER:")) frame.getCanvas().updateOrder(line.substring(6));
         }
@@ -48,6 +49,7 @@ public class ArduinoComms {
     }
     
     public void sendCommand(String command) {
+        System.out.println("Command being sent: " + command);
         if (checkConnection()) {
             byte[] data = (command + "\n").getBytes();
             serialPort.writeBytes(data, data.length);
@@ -57,31 +59,22 @@ public class ArduinoComms {
     public void sendDelayCommand(char light, int red, int yellow, int green) {
         if (checkConnection()) {
             String command = String.format("DELAY:%c:%d,%d,%d\n", light, red, yellow, green);
+            System.out.println(command);
             byte[] data = command.getBytes();
             serialPort.writeBytes(data, data.length);
         }
     }
     
     private void updateStates(String state) {
-        int light = Character.getNumericValue(state.charAt(0));
-        switch (light) {
-            case 0:
-                state = state.replaceFirst(Integer.toString(light), "A");
-                break;
-            case 1:
-                state = state.replaceFirst(Integer.toString(light), "B");
-                break;
-            case 2:
-                state = state.replaceFirst(Integer.toString(light), "C");
-                break;
-            case 3:
-                state = state.replaceFirst(Integer.toString(light), "D");
-                break;
-            case 4:
-                state = state.replaceFirst(Integer.toString(light), "E");
-                break;
-        }
-        frame.getCanvas().updateLightState(state);
+        String[] parts = state.split(",");
+        if (parts.length < 4) return;
+
+        char label = parts[0].charAt(0);
+        boolean red = "1".equals(parts[1]);
+        boolean yellow = "1".equals(parts[2]);
+        boolean green = "1".equals(parts[3]);
+
+        frame.getCanvas().updateLightState(label, red, yellow, green);
     }
     
     private boolean checkConnection() {

@@ -115,8 +115,10 @@ public class TrafficFrame extends JFrame {
         delayMainContainer.add(delayContainer);
         delayMainContainer.add(Box.createRigidArea(new Dimension(0, 10)));
         delayMainContainer.add(submitDelaysBtn);
+        
         return delayMainContainer;
     }
+    
     
     private void initSerialControls() {
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));

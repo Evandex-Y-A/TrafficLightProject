@@ -61,15 +61,8 @@ public class TrafficPanel extends JPanel {
         addMouseMotionListener(dragHandler);
     }
     
-    public void updateLightState(String stateData) {
-        String[] parts = stateData.split(",");
-        if (parts.length < 4) return;
-        
-        char label = parts[0].charAt(0);
-        boolean red = "1".equals(parts[1]);
-        boolean yellow = "1".equals(parts[2]);
-        boolean green = "1".equals(parts[3]);
-        
+    public void updateLightState(char label, boolean red, boolean yellow, boolean green) {
+        System.out.println("received state: " + String.valueOf(label) + String.valueOf(red) + String.valueOf(yellow) + String.valueOf(green));
         for (TrafficLight light : lights) {
             if (light.getLabel() == label) {
                 light.setState(red, yellow, green);
